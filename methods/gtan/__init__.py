@@ -1,16 +1,11 @@
 from .gtan_model import GraphAttnModel
 from .gtan_lpa import load_lpa_subtensor
 import copy
-
+import torch
+import os
 
 class early_stopper(object):
-    def __init__(self, patience=7, verbose=False, delta=0):
-        """
-        Initialize the early stopper
-        :param patience: the maximum number of rounds tolerated
-        :param verbose: whether to stop early
-        :param delta: the regularization factor
-        """
+    def __init__(self, patience=7, verbose=False, delta=0, save_path='./best_model.pth'):
         self.patience = patience
         self.verbose = verbose
         self.delta = delta
@@ -19,24 +14,16 @@ class early_stopper(object):
         self.is_earlystop = False
         self.count = 0
         self.best_model = None
-        # self.val_preds = []
-        # self.val_logits = []
+        self.save_path = save_path  # Path to save the best model
 
-    def earlystop(self, loss, model=None):  # , preds, logits):
-        """
-        :param loss: the loss score on validation set
-        :param model: the model
-        """
+    def earlystop(self, loss, model=None):
         value = -loss
         cv = loss
-        # value = ap
-
         if self.best_value is None:
             self.best_value = value
             self.best_cv = cv
             self.best_model = copy.deepcopy(model).to('cpu')
-            # self.val_preds = preds
-            # self.val_logits = logits
+            torch.save(self.best_model.state_dict(), self.save_path)  # Save the best model
         elif value < self.best_value + self.delta:
             self.count += 1
             if self.verbose:
@@ -47,6 +34,5 @@ class early_stopper(object):
             self.best_value = value
             self.best_cv = cv
             self.best_model = copy.deepcopy(model).to('cpu')
-            # self.val_preds = preds
-            # self.val_logits = logits
+            torch.save(self.best_model.state_dict(), self.save_path)  # Save the best model
             self.count = 0
